@@ -127,3 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Manually adding for Intellij and pycharm etc
+.idea/
