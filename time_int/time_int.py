@@ -14,11 +14,6 @@ Also provides a method to represent the time as a string
 without extraneous parts (like including time of day when
 value falls on midnight, or including seconds when value
 falls on a minute etc).
-
-NOTE: although TimeInt is naive about time zone, in the
-regular use of the oanda_candles package all times will
-be in UTC.
-
 """
 
 
@@ -35,7 +30,7 @@ class TimeInt(int):
 
     @classmethod
     def utcnow(cls) -> "TimeInt":
-        """Get the TimeInt for right now."""
+        """Get the TimeInt for right now in UTC time."""
         return TimeInt(round(datetime.utcnow().timestamp()))
 
     def get_datetime(self) -> datetime:
