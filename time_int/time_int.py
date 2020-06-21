@@ -24,6 +24,11 @@ class TimeInt(int):
     MAX = None  # Apr 2, 2106, end of epoch in 32bit
 
     @classmethod
+    def from_datetime(cls, date_time: datetime):
+        """TimeInt from a datetime object."""
+        return TimeInt(date_time.timestamp())
+
+    @classmethod
     def from_unix(cls, epoch: str) -> "TimeInt":
         """TimeInt from string like "1590177600.000000000"""
         return cls(round(float(epoch)))

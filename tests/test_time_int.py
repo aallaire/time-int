@@ -2,7 +2,7 @@ from time_int import __version__, TimeInt
 
 
 def test_version():
-    assert __version__ == '0.0.1'
+    assert __version__ == "0.0.3"
 
 
 def test_time_int():
@@ -31,3 +31,9 @@ def test_get_pretty():
     assert on_the_day.get_pretty() == "2020-05-31"
 
 
+def test_from_datetime():
+    time_int = TimeInt(1590984783)
+    date_time = time_int.get_datetime()
+    time_int2 = TimeInt.from_datetime(date_time)
+    assert isinstance(time_int2, TimeInt)
+    assert time_int == time_int2

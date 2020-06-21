@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "time-int"
-version = "0.0.2"
+version = "0.0.3"
 description = "Subclass of integer representing seconds since UNIX epoch"
 authors = ["Andrew Allaire <andrew.allaire@gmail.com>"]
 license = "MIT"
@@ -10,7 +10,7 @@ repository = "https://github.com/aallaire/time-int"
 
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.5"
 pytest = "^5.4.2"
 
 [tool.poetry.dev-dependencies]
