@@ -55,9 +55,9 @@ class TimeInt(int):
             form = "%Y-%m-%d %I:%M %p"
         elif dt.hour:
             form = "%Y-%m-%d %I %p"
-        elif dt.day:
+        elif dt.day != 1:
             form = "%Y-%m-%d"
-        elif dt.month:
+        elif dt.month != 1:
             form = "%Y-%m"
         else:
             form = "%Y"

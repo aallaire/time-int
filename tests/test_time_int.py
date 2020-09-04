@@ -2,7 +2,7 @@ from time_int import __version__, TimeInt
 
 
 def test_version():
-    assert __version__ == "0.0.3"
+    assert __version__ == "0.0.4"
 
 
 def test_time_int():
@@ -25,10 +25,14 @@ def test_get_pretty():
     on_the_minute = TimeInt(time_int - 3)
     on_the_hour = TimeInt(time_int - 783)
     on_the_day = TimeInt(time_int - 83583)
+    on_the_month = TimeInt(time_int - 2675583)
+    on_the_year = TimeInt(1577858400)
     assert time_int.get_pretty() == "2020-05-31 11:13:03 PM"
     assert on_the_minute.get_pretty() == "2020-05-31 11:13 PM"
     assert on_the_hour.get_pretty() == "2020-05-31 11 PM"
     assert on_the_day.get_pretty() == "2020-05-31"
+    assert on_the_month.get_pretty() == "2020-05"
+    assert on_the_year.get_pretty() == "2020"
 
 
 def test_from_datetime():
