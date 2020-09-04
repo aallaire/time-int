@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 """Integer subclass to represent naive time since epoch.
 
@@ -62,6 +62,50 @@ class TimeInt(int):
         else:
             form = "%Y"
         return dt.strftime(form)
+
+    def trunc_year(self) -> "TimeInt":
+        """Round TimeInt down to the start of year."""
+        dt = datetime.fromtimestamp(int(self))
+        trunc_dt = datetime(year=dt.year, month=1, day=1)
+        return TimeInt(int(trunc_dt.timestamp()))
+
+    def trunc_month(self) -> "TimeInt":
+        """Round TimeInt down to the start of month."""
+        dt = datetime.fromtimestamp(int(self))
+        trunc_dt = datetime(year=dt.year, month=dt.month, day=1)
+        return TimeInt(int(trunc_dt.timestamp()))
+
+    def trunc_week(self) -> "TimeInt":
+        """Round TimeInt down to the start of latest Sunday."""
+        dt = datetime.fromtimestamp(int(self))
+        # Note, for some reason weekday() from datetime has Monday as 0.
+        # We tweak the results so that Sunday is 0 instead.
+        week_day = (dt.weekday() + 1) % 7
+        delta = timedelta(
+            days=week_day, hours=dt.hour, minutes=dt.minute, seconds=dt.second
+        )
+        sunday_dt = dt - delta
+        return TimeInt(int(sunday_dt.timestamp()))
+
+    def trunc_day(self) -> "TimeInt":
+        """Round TimeInt down to the start of day."""
+        dt = datetime.fromtimestamp(int(self))
+        trunc_dt = datetime(year=dt.year, month=dt.month, day=dt.day)
+        return TimeInt(int(trunc_dt.timestamp()))
+
+    def trunc_hour(self) -> "TimeInt":
+        """Round TimeInt down to the start of hour."""
+        dt = datetime.fromtimestamp(int(self))
+        trunc_dt = datetime(year=dt.year, month=dt.month, day=dt.day, hour=dt.hour)
+        return TimeInt(int(trunc_dt.timestamp()))
+
+    def trunc_minute(self) -> "TimeInt":
+        """Round TimeInt down to the start of minute."""
+        dt = datetime.fromtimestamp(int(self))
+        trunc_dt = datetime(
+            year=dt.year, month=dt.month, day=dt.day, hour=dt.hour, minute=dt.minute
+        )
+        return TimeInt(int(trunc_dt.timestamp()))
 
 
 TimeInt.MIN = TimeInt(0)

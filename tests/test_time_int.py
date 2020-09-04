@@ -2,7 +2,7 @@ from time_int import __version__, TimeInt
 
 
 def test_version():
-    assert __version__ == "0.0.4"
+    assert __version__ == "0.0.5"
 
 
 def test_time_int():
@@ -41,3 +41,39 @@ def test_from_datetime():
     time_int2 = TimeInt.from_datetime(date_time)
     assert isinstance(time_int2, TimeInt)
     assert time_int == time_int2
+
+
+def test_trunc_year():
+    time_int = TimeInt(1590984783)
+    year_time_int = time_int.trunc_year()
+    assert year_time_int.get_pretty() == "2020"
+
+
+def test_trunc_month():
+    time_int = TimeInt(1590984783)
+    month_time_int = time_int.trunc_month()
+    assert month_time_int.get_pretty() == "2020-05"
+
+
+def test_trunc_day():
+    time_int = TimeInt(1590984783)
+    day_time_int = time_int.trunc_day()
+    assert day_time_int.get_pretty() == "2020-05-31"
+
+
+def test_trunc_hour():
+    time_int = TimeInt(1590984783)
+    hour_time_int = time_int.trunc_hour()
+    assert hour_time_int.get_pretty() == "2020-05-31 11 PM"
+
+
+def test_trunc_minute():
+    time_int = TimeInt(1590984783)
+    minute_time_int = time_int.trunc_minute()
+    assert minute_time_int.get_pretty() == "2020-05-31 11:13 PM"
+
+
+def test_trunc_week():
+    time_int = TimeInt(1591287183)
+    week_time_int = time_int.trunc_week()
+    assert week_time_int.get_pretty() == "2020-05-31"
