@@ -63,16 +63,34 @@ class TimeInt(int):
             form = "%Y"
         return dt.strftime(form)
 
-    def trunc_year(self) -> "TimeInt":
-        """Round TimeInt down to the start of year."""
+    def trunc_year(self, num: int = 1) -> "TimeInt":
+        """Round TimeInt down to the start of year (or group of years).
+
+        Args:
+            num: round down to units of this many years since year 0. (Historically there
+                 is no actual year 0, rather 1 B.C. is followed by 1 A.D. But for our
+                 purposes we pretend, this means, for example, the year 2000 is grouped
+                 as the start of the last century rather than the end of it).
+        Returns:
+            TimeInt at start of month, or group of num months.
+        """
         dt = datetime.fromtimestamp(int(self))
-        trunc_dt = datetime(year=dt.year, month=1, day=1)
+        year = dt.year - (dt.year % num)
+        trunc_dt = datetime(year=year, month=1, day=1)
         return TimeInt(int(trunc_dt.timestamp()))
 
-    def trunc_month(self) -> "TimeInt":
-        """Round TimeInt down to the start of month."""
+    def trunc_month(self, num: int = 1) -> "TimeInt":
+        """Round TimeInt down to the start of month (or group of months).
+        Args:
+            num: round down to units of this many months since start of year.
+        Returns:
+            TimeInt at start of month, or group of num months.
+        """
         dt = datetime.fromtimestamp(int(self))
-        trunc_dt = datetime(year=dt.year, month=dt.month, day=1)
+        # Note months of year start at 1, rather than 0, so we need shift
+        # down one to make the modulo operator simulate the modulo ring of num.
+        month = dt.month - ((dt.month - 1) % num)
+        trunc_dt = datetime(year=dt.year, month=month, day=1)
         return TimeInt(int(trunc_dt.timestamp()))
 
     def trunc_week(self) -> "TimeInt":
@@ -87,23 +105,46 @@ class TimeInt(int):
         sunday_dt = dt - delta
         return TimeInt(int(sunday_dt.timestamp()))
 
-    def trunc_day(self) -> "TimeInt":
-        """Round TimeInt down to the start of day."""
+    def trunc_day(self, num: int = 1) -> "TimeInt":
+        """Round TimeInt down to the start of day (or group of days).
+
+        Args:
+            num: round down to units of this many days since start of month.
+        Returns:
+            TimeInt at start of day, or group of num days.
+        """
         dt = datetime.fromtimestamp(int(self))
-        trunc_dt = datetime(year=dt.year, month=dt.month, day=dt.day)
+        # Note days of month start at 1, rather than 0, so we need shift the day
+        # down one to make the modulo operator simulate the modulo ring of num.
+        day = dt.day - ((dt.day - 1) % num)
+        trunc_dt = datetime(year=dt.year, month=dt.month, day=day)
         return TimeInt(int(trunc_dt.timestamp()))
 
-    def trunc_hour(self) -> "TimeInt":
-        """Round TimeInt down to the start of hour."""
+    def trunc_hour(self, num: int = 1) -> "TimeInt":
+        """Round TimeInt down to the start of hour (or group of hours).
+
+        Args:
+            num: round down to units of this many hours since start of day.
+        Returns:
+            TimeInt at start of hour, or group of num hours.
+        """
         dt = datetime.fromtimestamp(int(self))
-        trunc_dt = datetime(year=dt.year, month=dt.month, day=dt.day, hour=dt.hour)
+        hour = dt.hour - (dt.hour % num)
+        trunc_dt = datetime(year=dt.year, month=dt.month, day=dt.day, hour=hour)
         return TimeInt(int(trunc_dt.timestamp()))
 
-    def trunc_minute(self) -> "TimeInt":
-        """Round TimeInt down to the start of minute."""
+    def trunc_minute(self, num: int = 1) -> "TimeInt":
+        """Round TimeInt down to the start of minute (or group of minutes).
+
+        Args:
+            num: round down to units of this many hours since start of day.
+        Returns:
+            TimeInt at start of minute, or group of num minutes.
+        """
         dt = datetime.fromtimestamp(int(self))
+        minute = dt.minute - (dt.minute % num)
         trunc_dt = datetime(
-            year=dt.year, month=dt.month, day=dt.day, hour=dt.hour, minute=dt.minute
+            year=dt.year, month=dt.month, day=dt.day, hour=dt.hour, minute=minute
         )
         return TimeInt(int(trunc_dt.timestamp()))
 
