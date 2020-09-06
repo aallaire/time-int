@@ -1,3 +1,3 @@
-__version__ = "0.0.6"
+__version__ = "0.0.7"
 
-from .time_int import TimeInt
+from .time_int import TimeInt, TimeTruncUnit

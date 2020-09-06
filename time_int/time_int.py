@@ -1,4 +1,7 @@
+from magic_kind import MagicKind
 from datetime import datetime, timedelta
+
+from typing import Dict, Callable
 
 """Integer subclass to represent naive time since epoch.
 
@@ -15,6 +18,17 @@ without extraneous parts (like including time of day when
 value falls on midnight, or including seconds when value
 falls on a minute etc).
 """
+
+
+class TimeTruncUnit(MagicKind):
+    """Values to be used as arguments to TimeInt.trunc(num=1) method"""
+
+    YEAR: str = "year"
+    MONTH: str = "month"
+    WEEK: str = "week"
+    DAY: str = "day"
+    HOUR: str = "hour"
+    MINUTE: str = "minute"
 
 
 class TimeInt(int):
@@ -62,6 +76,36 @@ class TimeInt(int):
         else:
             form = "%Y"
         return dt.strftime(form)
+
+    def trunc(self, unit: str, num: int = 1) -> "TimeInt":
+        """Combination of the trunc_* methods.
+
+        Args:
+            unit: One of the TimeTruncUnit values.
+            num: like num arg in trunc_* methods, not valid for week.
+        Raises:
+            ValueError: if unit is not class attribute of TimeTruncUnit
+            ValueError: if num is not greater than 0.
+            ValueError: if unit is TimeTruncUnit.WEEK and num is anything but 1.
+        Returns:
+            Rounded down TimeInt value.
+        """
+        if unit not in TimeTruncUnit:
+            expected = ", ".join(sorted([f'"{_}"' for _ in TimeTruncUnit]))
+            raise ValueError(
+                f'Got time trunc unit of "{unit}", but expected one of {expected}'
+            )
+        elif num < 1:
+            raise ValueError(f"number of units must be int of 1 or more, but got {num}")
+        elif num != 1 and unit == TimeTruncUnit.WEEK:
+            raise ValueError(
+                "When truncating to week, you can not specify a num "
+                f"other than the default of 1, but got {num}"
+            )
+        if unit == TimeTruncUnit.WEEK:
+            return self.trunc_week()
+        else:
+            return self._trunc_function_map[unit](self, num=num)
 
     def trunc_year(self, num: int = 1) -> "TimeInt":
         """Round TimeInt down to the start of year (or group of years).
@@ -147,6 +191,15 @@ class TimeInt(int):
             year=dt.year, month=dt.month, day=dt.day, hour=dt.hour, minute=minute
         )
         return TimeInt(int(trunc_dt.timestamp()))
+
+    _trunc_function_map: Dict[str, Callable] = {
+        TimeTruncUnit.YEAR: trunc_year,
+        TimeTruncUnit.MONTH: trunc_month,
+        TimeTruncUnit.WEEK: trunc_week,
+        TimeTruncUnit.DAY: trunc_day,
+        TimeTruncUnit.HOUR: trunc_hour,
+        TimeTruncUnit.MINUTE: trunc_minute,
+    }
 
 
 TimeInt.MIN = TimeInt(0)

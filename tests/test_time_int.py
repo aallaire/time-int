@@ -1,9 +1,10 @@
-from time_int import __version__, TimeInt
+from time_int import __version__, TimeInt, TimeTruncUnit
 from datetime import datetime
+import pytest
 
 
 def test_version():
-    assert __version__ == "0.0.6"
+    assert __version__ == "0.0.7"
 
 
 def test_time_int():
@@ -156,3 +157,30 @@ def test_trunc_week():
     time_int = TimeInt(1591287183)
     week_time_int = time_int.trunc_week()
     assert week_time_int.get_pretty() == "2020-05-31"
+
+
+def test_trunc():
+    time_int = TimeInt(1591287183)
+    with pytest.raises(ValueError):
+        time_int.trunc("bogus")
+    with pytest.raises(ValueError):
+        time_int.trunc("also_bogus", num=3)
+    with pytest.raises(ValueError):
+        time_int.trunc(TimeTruncUnit.DAY, num=-2)
+    with pytest.raises(ValueError):
+        time_int.trunc(TimeTruncUnit.MONTH, num=0)
+    with pytest.raises(ValueError):
+        time_int.trunc(TimeTruncUnit.WEEK, num=2)
+    time = time_int.trunc(TimeTruncUnit.YEAR, num=6)
+    assert time.get_pretty() == "2016"
+    time = time_int.trunc(TimeTruncUnit.MONTH, num=3)
+    assert time.get_pretty() == "2020-04"
+    time = time_int.trunc(TimeTruncUnit.WEEK)
+    assert time.get_pretty() == "2020-05-31"
+    time = time.trunc(TimeTruncUnit.DAY, num=7)
+    assert time.get_pretty() == "2020-05-29"
+    time_int = TimeInt(1590984783)
+    time = time_int.trunc(TimeTruncUnit.HOUR, num=5)
+    assert time.get_pretty() == "2020-05-31 08 PM"
+    time = time_int.trunc(TimeTruncUnit.MINUTE, num=2)
+    assert time.get_pretty() == "2020-05-31 11:12 PM"
