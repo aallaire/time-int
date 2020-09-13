@@ -1,22 +1,17 @@
 from magic_kind import MagicKind
-from datetime import datetime, timedelta
+from math import floor
+from calendar import timegm
+from datetime import datetime, timedelta, timezone
+from time import gmtime, struct_time, time, strftime
 
-from typing import Dict, Callable
+from typing import Dict, Callable, Union
 
-"""Integer subclass to represent naive time since epoch.
+"""Integer subclass to represent UTC seconds since epoch.
 
 TimeInt values are only good for the time between
-   Jan 1, 1970 -> Apr 2, 2016
+   Jan 1, 1970 -> Apr 2, 2106
 These limits are available as TimeInt.MIN and TimeInt.MAX
-Within this range time is rounded to the nearest second.
-
-The idea is to have the time small for storage while making
-sort comparisons quick and easy.
-
-Also provides a method to represent the time as a string
-without extraneous parts (like including time of day when
-value falls on midnight, or including seconds when value
-falls on a minute etc).
+Within this range time is rounded down to the nearest second.
 """
 
 
@@ -34,26 +29,43 @@ class TimeTruncUnit(MagicKind):
 class TimeInt(int):
     """Integer that represents a naive time since epoch."""
 
-    MIN = None  # Jan 1, 1970, start of epoch
-    MAX = None  # Apr 2, 2106, end of epoch in 32bit
+    MIN: int = 0  # Jan 1, 1970, start of epoch
+    MAX: int = 32_503_680_000  # Jan 1, 3000
+    UTC: timezone = timezone.utc
 
-    @classmethod
-    def from_datetime(cls, date_time: datetime):
-        """TimeInt from a datetime object."""
-        return TimeInt(date_time.timestamp())
+    def __new__(cls, value: Union[int, float, str]) -> "TimeInt":
+        value = int(value)
+        if cls.MIN <= value <= cls.MAX:
+            return super().__new__(cls, value)
+        else:
+            raise ValueError(f"TimeInt value out of range: {value}")
 
-    @classmethod
-    def from_unix(cls, epoch: str) -> "TimeInt":
-        """TimeInt from string like "1590177600.000000000"""
-        return cls(round(float(epoch)))
-
-    @classmethod
-    def utcnow(cls) -> "TimeInt":
-        """Get the TimeInt for right now in UTC time."""
-        return TimeInt(round(datetime.utcnow().timestamp()))
+    def get_struct_time(self) -> struct_time:
+        """Get struct_time (time package)."""
+        return gmtime(float(self))
 
     def get_datetime(self) -> datetime:
-        return datetime.fromtimestamp(int(self))
+        """Get datetime (datetime package)."""
+        return datetime.fromtimestamp(float(self), tz=self.UTC)
+
+    @classmethod
+    def from_struct_time(cls, st: struct_time) -> "TimeInt":
+        """TimeInt from a struct_time object (time package)."""
+
+    @classmethod
+    def from_datetime(cls, dt: datetime) -> "TimeInt":
+        """TimeInt from a datetime object (datetime package)."""
+        return TimeInt(timegm(dt.utctimetuple()))
+
+    @classmethod
+    def from_float_string(cls, epoch: str) -> "TimeInt":
+        """TimeInt from string like "1590177600.000000000"""
+        return cls(floor(float(epoch)))
+
+    @classmethod
+    def now(cls) -> "TimeInt":
+        """Get the TimeInt for most recent second (e.g. we round down)."""
+        return TimeInt(floor(time()))
 
     def get_pretty(self) -> str:
         """Get as formatted string leaving off parts that are 0 on end.
@@ -62,20 +74,20 @@ class TimeInt(int):
         and seconds. If it happens to fall right on the second where
         a year changes, just give the year number etc.
         """
-        dt = datetime.fromtimestamp(int(self))
-        if dt.second:
+        st = gmtime(float(self))
+        if st.tm_sec:
             form = "%Y-%m-%d %I:%M:%S %p"
-        elif dt.minute:
+        elif st.tm_min:
             form = "%Y-%m-%d %I:%M %p"
-        elif dt.hour:
+        elif st.tm_hour:
             form = "%Y-%m-%d %I %p"
-        elif dt.day != 1:
+        elif st.tm_mday != 1:
             form = "%Y-%m-%d"
-        elif dt.month != 1:
+        elif st.tm_mon != 1:
             form = "%Y-%m"
         else:
             form = "%Y"
-        return dt.strftime(form)
+        return strftime(form, st)
 
     def trunc(self, unit: str, num: int = 1) -> "TimeInt":
         """Combination of the trunc_* methods.
@@ -107,6 +119,52 @@ class TimeInt(int):
         else:
             return self._trunc_function_map[unit](self, num=num)
 
+    @property
+    def second(self) -> int:
+        """Get seconds as an integer in range of 0 to 59."""
+        return gmtime(float(self)).tm_sec
+
+    @property
+    def minute(self) -> int:
+        """Get minute as an integer in range of 0 to 59."""
+        return gmtime(float(self)).tm_min
+
+    @property
+    def hour(self) -> int:
+        """Get hour day as an integer in range of 0 to 23."""
+        return gmtime(float(self)).tm_hour
+
+    @property
+    def day(self) -> int:
+        """Get day of the month as an integer in range of 1 to 31."""
+        return gmtime(float(self)).tm_mday
+
+    @property
+    def weekday(self) -> int:
+        """Get day of the week where Sunday is 0.
+
+        datetime and time packages follow a convention where Monday is 0.
+        But in our case of sticking with UTC rather than local timezones
+        this has the undesirable result of working and market trading
+        hours in time zones to the East (like Australia and Japan) starting
+        before the week officially starts.
+
+        In order to put business Mon-Fri workday hours all over the world
+        in the same week, we change the at the start of Sunday UTC instead of
+        the start of Monday UTC. Thus Sunday is 0 up to Friday being 6.
+        """
+        return (gmtime(float(self)).tm_wday + 1) % 7
+
+    @property
+    def month(self) -> int:
+        """Get the month as an integer in range of 1 to 12."""
+        return gmtime(float(self)).tm_mon
+
+    @property
+    def year(self) -> int:
+        """Get the year as an integer, e.g. 1985 or 2012."""
+        return gmtime(float(self)).tm_year
+
     def trunc_year(self, num: int = 1) -> "TimeInt":
         """Round TimeInt down to the start of year (or group of years).
 
@@ -118,10 +176,10 @@ class TimeInt(int):
         Returns:
             TimeInt at start of month, or group of num months.
         """
-        dt = datetime.fromtimestamp(int(self))
-        year = dt.year - (dt.year % num)
-        trunc_dt = datetime(year=year, month=1, day=1)
-        return TimeInt(int(trunc_dt.timestamp()))
+        st = gmtime(float(self))
+        year = st.tm_year - (st.tm_year % num)
+        values = (year, 1, 1, 0, 0, 0, 0, 0, 0)
+        return TimeInt(timegm(struct_time(values)))
 
     def trunc_month(self, num: int = 1) -> "TimeInt":
         """Round TimeInt down to the start of month (or group of months).
@@ -130,16 +188,14 @@ class TimeInt(int):
         Returns:
             TimeInt at start of month, or group of num months.
         """
-        dt = datetime.fromtimestamp(int(self))
-        # Note months of year start at 1, rather than 0, so we need shift
-        # down one to make the modulo operator simulate the modulo ring of num.
-        month = dt.month - ((dt.month - 1) % num)
-        trunc_dt = datetime(year=dt.year, month=month, day=1)
-        return TimeInt(int(trunc_dt.timestamp()))
+        st = gmtime(float(self))
+        month = st.tm_mon - ((st.tm_mon - 1) % num)
+        values = (st.tm_year, month, 1, 0, 0, 0, 0, 0, 0)
+        return TimeInt(timegm(struct_time(values)))
 
     def trunc_week(self) -> "TimeInt":
         """Round TimeInt down to the start of latest Sunday."""
-        dt = datetime.fromtimestamp(int(self))
+        dt = datetime.fromtimestamp(float(self), tz=self.UTC)
         # Note, for some reason weekday() from datetime has Monday as 0.
         # We tweak the results so that Sunday is 0 instead.
         week_day = (dt.weekday() + 1) % 7
@@ -157,12 +213,10 @@ class TimeInt(int):
         Returns:
             TimeInt at start of day, or group of num days.
         """
-        dt = datetime.fromtimestamp(int(self))
-        # Note days of month start at 1, rather than 0, so we need shift the day
-        # down one to make the modulo operator simulate the modulo ring of num.
-        day = dt.day - ((dt.day - 1) % num)
-        trunc_dt = datetime(year=dt.year, month=dt.month, day=day)
-        return TimeInt(int(trunc_dt.timestamp()))
+        st = gmtime(float(self))
+        day = st.tm_mday - ((st.tm_mday - 1) % num)
+        values = (st.tm_year, st.tm_mon, day, 0, 0, 0, 0, 0, 0)
+        return TimeInt(timegm(struct_time(values)))
 
     def trunc_hour(self, num: int = 1) -> "TimeInt":
         """Round TimeInt down to the start of hour (or group of hours).
@@ -172,10 +226,10 @@ class TimeInt(int):
         Returns:
             TimeInt at start of hour, or group of num hours.
         """
-        dt = datetime.fromtimestamp(int(self))
-        hour = dt.hour - (dt.hour % num)
-        trunc_dt = datetime(year=dt.year, month=dt.month, day=dt.day, hour=hour)
-        return TimeInt(int(trunc_dt.timestamp()))
+        st = gmtime(float(self))
+        hour = st.tm_hour - (st.tm_hour % num)
+        values = (st.tm_year, st.tm_mon, st.tm_mday, hour, 0, 0, 0, 0, 0)
+        return TimeInt(timegm(struct_time(values)))
 
     def trunc_minute(self, num: int = 1) -> "TimeInt":
         """Round TimeInt down to the start of minute (or group of minutes).
@@ -185,12 +239,10 @@ class TimeInt(int):
         Returns:
             TimeInt at start of minute, or group of num minutes.
         """
-        dt = datetime.fromtimestamp(int(self))
-        minute = dt.minute - (dt.minute % num)
-        trunc_dt = datetime(
-            year=dt.year, month=dt.month, day=dt.day, hour=dt.hour, minute=minute
-        )
-        return TimeInt(int(trunc_dt.timestamp()))
+        st = gmtime(float(self))
+        minute = st.tm_min - (st.tm_min % num)
+        values = (st.tm_year, st.tm_mon, st.tm_mday, st.tm_hour, minute, 0, 0, 0, 0)
+        return TimeInt(timegm(struct_time(values)))
 
     _trunc_function_map: Dict[str, Callable] = {
         TimeTruncUnit.YEAR: trunc_year,
@@ -202,5 +254,6 @@ class TimeInt(int):
     }
 
 
-TimeInt.MIN = TimeInt(0)
-TimeInt.MAX = TimeInt(4_294_967_294)
+# Convert MIN and MAX from regular ints to TimeInt
+TimeInt.MIN = TimeInt(TimeInt.MIN)
+TimeInt.MAX = TimeInt(TimeInt.MAX)

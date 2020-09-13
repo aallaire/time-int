@@ -1,5 +1,5 @@
 # time-int
-Integer subclass to represent naive time since epoch.
+Integer subclass for number of seconds since the epoch in UTC
 
 ### The Idea
 UNIX has a venerable tradition of representing time as seconds since the
@@ -7,11 +7,19 @@ start of 1970. This has its limitations, but it is sometimes desirably
 simple. This package sub-classes int to give a little handy functionality
 to this simple approach.
 
-### Important Limitations
-* Supported range starts at 0 or TimeInt.MIN on Jan 1, 1970
-* Supported range ends at a 32-bit limit or TimeInt.MAX on Apr 2, 2106
-* Values are rounded off to the nearest second.
-* Values do not track what time-zone they represent.
+#### More robust resources
+For uses beyond this rather specific functionality, the standard python
+distribution includes powerful time related packages such as `datetime`,
+`time` and `calendar`. Also other packages installable time related
+packages such as `pytz` and `timeutil`.
+
+### Important Limitations of TimeInt objects.
+* Values are always treated as relative to UTC.
+* Values are rounded down to the second.
+* Supported range starts at Jan 1, 1970 (UTC): 0
+* Supported range ends at Jan 1, 3000 (UTC): 32,503,680,000
+* The supported range might need to be different on other systems, have only tested on windows.
+* This package is not far enough along in development to be safe from errors or major feature changes.
 
 ### Quick Example
 ```python
