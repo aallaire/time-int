@@ -6,14 +6,6 @@ from time import gmtime, struct_time, time, strftime
 
 from typing import Dict, Callable, Union
 
-"""Integer subclass to represent UTC seconds since epoch.
-
-TimeInt values are only good for the time between
-   Jan 1, 1970 -> Apr 2, 2106
-These limits are available as TimeInt.MIN and TimeInt.MAX
-Within this range time is rounded down to the nearest second.
-"""
-
 
 class TimeTruncUnit(MagicKind):
     """Values to be used as arguments to TimeInt.trunc(num=1) method"""
