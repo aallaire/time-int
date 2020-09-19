@@ -6,7 +6,7 @@ import pytest
 
 
 def test_version():
-    assert __version__ == "0.0.8"
+    assert __version__ == "0.0.9"
 
 
 def test_end_of_week_stamp():

@@ -43,6 +43,7 @@ class TimeInt(int):
     @classmethod
     def from_struct_time(cls, st: struct_time) -> "TimeInt":
         """TimeInt from a struct_time object (time package)."""
+        return TimeInt(timegm(st))
 
     @classmethod
     def from_datetime(cls, dt: datetime) -> "TimeInt":
